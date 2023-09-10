@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <vector>
 
-
 template<typename T>
 std::string to_string(T value) {
     std::ostringstream ss;
@@ -29,7 +28,7 @@ void reportError(cl_int err, const std::string &filename, int line) {
 
 std::string deviceTypeToStr(cl_device_type deviceType) {
     std::string deviceTypeStr = "";
-    if (deviceType & CL_DEVICE_TYPE_ALL == CL_DEVICE_TYPE_ALL)
+    if ((deviceType & CL_DEVICE_TYPE_ALL) == CL_DEVICE_TYPE_ALL)
         deviceTypeStr = "CL_DEVICE_TYPE_ALL";
     else {
         if (deviceType & CL_DEVICE_TYPE_DEFAULT)
