@@ -99,6 +99,7 @@ int main() {
     // код по переданному аргументом errcode_ret указателю)
     // И хорошо бы сразу добавить в конце clReleaseContext (да, не очень RAII, но это лишь пример)
     cl_int errcode_ret = 0;
+
     cl_context_properties properties[] = {
             CL_CONTEXT_PLATFORM, (cl_context_properties) chosenPlatform,
             0// end of property list
@@ -134,6 +135,16 @@ int main() {
     // Данные в as и bs можно прогрузить этим же методом, скопировав данные из host_ptr=as.data() (и не забыв про битовый флаг, на это указывающий)
     // или же через метод Buffer Objects -> clEnqueueWriteBuffer
     // И хорошо бы сразу добавить в конце clReleaseMemObject (аналогично, все дальнейшие ресурсы вроде OpenCL под-программы, кернела и т.п. тоже нужно освобождать)
+    cl_mem asBuffer = clCreateBuffer(context, (CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR), sizeof(float) * n, as.data(),
+                                     &errcode_ret);
+    OCL_SAFE_CALL(errcode_ret);
+    cl_mem bsBuffer = clCreateBuffer(context, (CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR), sizeof(float) * n, bs.data(),
+                                     &errcode_ret);
+    OCL_SAFE_CALL(errcode_ret);
+    cl_mem csBuffer = clCreateBuffer(context, (CL_MEM_WRITE_ONLY), sizeof(float) * n, nullptr, &errcode_ret);
+    OCL_SAFE_CALL(errcode_ret);
+
+    std::cout << "here2" << std::endl;
 
     // TODO 6 Выполните TODO 5 (реализуйте кернел в src/cl/aplusb.cl)
     // затем убедитесь, что выходит загрузить его с диска (убедитесь что Working directory выставлена правильно - см. описание задания),
