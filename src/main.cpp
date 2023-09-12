@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <tuple>
 #include <vector>
 
 
@@ -31,6 +32,23 @@ void reportError(cl_int err, const std::string &filename, int line) {
 
 #define OCL_SAFE_CALL(expr) reportError(expr, __FILE__, __LINE__)
 
+std::string deviceTypeToStr(cl_device_type deviceType) {
+    std::string deviceTypeStr = "";
+    if ((deviceType & CL_DEVICE_TYPE_ALL) == CL_DEVICE_TYPE_ALL)
+        deviceTypeStr = "CL_DEVICE_TYPE_ALL";
+    else {
+        if (deviceType & CL_DEVICE_TYPE_DEFAULT)
+            deviceTypeStr += "CL_DEVICE_TYPE_DEFAULT";
+        if (deviceType & CL_DEVICE_TYPE_CPU)
+            deviceTypeStr += "CL_DEVICE_TYPE_CPU ";
+        if (deviceType & CL_DEVICE_TYPE_GPU)
+            deviceTypeStr += "CL_DEVICE_TYPE_GPU ";
+        if (deviceType & CL_DEVICE_TYPE_ACCELERATOR)
+            deviceTypeStr += "CL_DEVICE_TYPE_ACCELERATOR ";
+    }
+    return deviceTypeStr;
+}
+
 
 int main() {
     // Пытаемся слинковаться с символами OpenCL API в runtime (через библиотеку clew)
@@ -39,12 +57,57 @@ int main() {
 
     // TODO 1 По аналогии с предыдущим заданием узнайте, какие есть устройства, и выберите из них какое-нибудь
     // (если в списке устройств есть хоть одна видеокарта - выберите ее, если нету - выбирайте процессор)
+    cl_device_id chosenDevice = 0;
+    cl_platform_id chosenPlatform = 0;
+
+    cl_uint platformsCount = 0;
+    OCL_SAFE_CALL(clGetPlatformIDs(0, nullptr, &platformsCount));
+    std::vector<cl_platform_id> platforms(platformsCount);
+    OCL_SAFE_CALL(clGetPlatformIDs(platformsCount, platforms.data(), nullptr));
+
+    std::vector<std::pair<cl_device_id, cl_platform_id>> devicesGPU = {};
+    std::vector<std::pair<cl_device_id, cl_platform_id>> devicesCPU = {};
+    for (int platformIndex = 0; platformIndex < platformsCount; ++platformIndex) {
+        cl_platform_id platform = platforms[platformIndex];
+
+        cl_uint devicesCount = 0;
+        OCL_SAFE_CALL(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, nullptr, &devicesCount));
+        std::vector<cl_device_id> devices(devicesCount);
+        OCL_SAFE_CALL(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, devicesCount, devices.data(), nullptr));
+
+
+        for (int deviceIndex = 0; deviceIndex < devicesCount; ++deviceIndex) {
+            cl_device_id device = devices[deviceIndex];
+            cl_device_type deviceType = 0;
+            OCL_SAFE_CALL(clGetDeviceInfo(device, CL_DEVICE_TYPE, sizeof(cl_device_type), &deviceType, nullptr));
+            if (deviceType & CL_DEVICE_TYPE_GPU)
+                devicesGPU.push_back(std::make_pair(device, platform));
+            else if (deviceType & CL_DEVICE_TYPE_CPU)
+                devicesCPU.push_back(std::make_pair(device, platform));
+        }
+    }
+    if (!devicesGPU.empty())
+        std::tie(chosenDevice, chosenPlatform) = devicesGPU[0];
+    else if (!devicesCPU.empty())
+        std::tie(chosenDevice, chosenPlatform) = devicesCPU[0];
+    else
+        throw std::runtime_error("No GPUs or CPUs are detected");
 
     // TODO 2 Создайте контекст с выбранным устройством
     // См. документацию https://www.khronos.org/registry/OpenCL/sdk/1.2/docs/man/xhtml/ -> OpenCL Runtime -> Contexts -> clCreateContext
     // Не забывайте проверять все возвращаемые коды на успешность (обратите внимание, что в данном случае метод возвращает
     // код по переданному аргументом errcode_ret указателю)
     // И хорошо бы сразу добавить в конце clReleaseContext (да, не очень RAII, но это лишь пример)
+    cl_int errcode_ret = 0;
+    cl_context_properties properties[] = {
+            CL_CONTEXT_PLATFORM, (cl_context_properties) chosenPlatform,
+            0// end of property list
+    };
+    cl_context context = clCreateContext(properties, 1, &chosenDevice, nullptr, nullptr, &errcode_ret);
+    OCL_SAFE_CALL(errcode_ret);
+    // switch (errcode_ret) {
+    //     case
+    // }
 
     // TODO 3 Создайте очередь выполняемых команд в рамках выбранного контекста и устройства
     // См. документацию https://www.khronos.org/registry/OpenCL/sdk/1.2/docs/man/xhtml/ -> OpenCL Runtime -> Runtime APIs -> Command Queues -> clCreateCommandQueue
@@ -105,11 +168,11 @@ int main() {
 
     // TODO 10 Выставите все аргументы в кернеле через clSetKernelArg (as_gpu, bs_gpu, cs_gpu и число значений, убедитесь, что тип количества элементов такой же в кернеле)
     {
-        // unsigned int i = 0;
-        // clSetKernelArg(kernel, i++, ..., ...);
-        // clSetKernelArg(kernel, i++, ..., ...);
-        // clSetKernelArg(kernel, i++, ..., ...);
-        // clSetKernelArg(kernel, i++, ..., ...);
+            // unsigned int i = 0;
+            // clSetKernelArg(kernel, i++, ..., ...);
+            // clSetKernelArg(kernel, i++, ..., ...);
+            // clSetKernelArg(kernel, i++, ..., ...);
+            // clSetKernelArg(kernel, i++, ..., ...);
     }
 
     // TODO 11 Выше увеличьте n с 1000*1000 до 100*1000*1000 (чтобы дальнейшие замеры были ближе к реальности)
