@@ -134,16 +134,14 @@ int main(int argc, char **argv)
 
         timer t;
         for (int i = 0; i < benchmarkingIters; ++i) {
-            kernel.exec(gpu::WorkSize(workGroupSize, global_work_size),
-                        mandelbrot, width, height,
-                        centralX - sizeX / 2.0f, centralY - sizeY / 2.0f,
-                        sizeX, sizeY,
-                        iterationsLimit, 0, 1);
+            kernel.exec(gpu::WorkSize(workGroupSize, global_work_size), mandelbrot, width, height,
+                        centralX - sizeX / 2.0f, centralY - sizeY / 2.0f, sizeX, sizeY,
+                        iterationsLimit, 1, 1);
             t.nextLap();
         }
         size_t flopsInLoop = 10;
         size_t maxApproximateFlops = width * height * iterationsLimit * flopsInLoop;
-        size_t gflops = 1 << 30;
+        size_t gflops = 1<<30;
         std::cout << "GPU: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
         std::cout << "GPU: " << maxApproximateFlops / gflops / t.lapAvg() << " GFlops" << std::endl;
 
@@ -151,14 +149,12 @@ int main(int argc, char **argv)
         renderToColor(gpu_results.ptr(), image.ptr(), width, height);
         image.savePNG("mandelbrot_gpu.png");
 
-        kernel.exec(gpu::WorkSize(workGroupSize, global_work_size),
-                    mandelbrot, width, height,
-                    centralX - sizeX / 2.0f, centralY - sizeY / 2.0f,
-                    sizeX, sizeY,
-                    iterationsLimit, 0, 10);
+        kernel.exec(gpu::WorkSize(workGroupSize, global_work_size), mandelbrot, width, height,
+                    centralX - sizeX / 2.0f, centralY - sizeY / 2.0f, sizeX, sizeY,
+                    iterationsLimit, 1, 10);
         mandelbrot.readN(gpu_results_anti_alias.ptr(), width * height);
         renderToColor(gpu_results_anti_alias.ptr(), image.ptr(), width, height);
-        image.savePNG("mandelbrot_gpu_antialias.png");
+        image.savePNG("mandelbrot_gpu_antialias_10.png");
     }
 
     {
@@ -168,12 +164,12 @@ int main(int argc, char **argv)
                 errorAvg += fabs(gpu_results.ptr()[j * width + i] - cpu_results.ptr()[j * width + i]);
             }
         }
-        errorAvg /= width * height;
+        errorAvg /= (width * height);
         std::cout << "GPU vs CPU average results difference: " << 100.0 * errorAvg << "%" << std::endl;
 
-//        if (errorAvg > 0.03) {
-//            throw std::runtime_error("Too high difference between CPU and GPU results!");
-//        }
+        if (errorAvg > 0.03) {
+            throw std::runtime_error("Too high difference between CPU and GPU results!");
+        }
     }
 
     // Это бонус в виде интерактивной отрисовки, не забудьте запустить на ГПУ, чтобы посмотреть, в какой момент числа итераций/точности single float перестанет хватать

@@ -45,7 +45,7 @@ int main(int argc, char **argv)
             t.nextLap();
         }
         std::cout << "CPU:     " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
-        std::cout << "CPU:     " << (n/1000.0/1000.0) / t.lapAvg() << " millions/s" << std::endl;
+        std::cout << "CPU:     " << n / 1000000.0 / t.lapAvg() << " millions/s" << std::endl;
     }
 
     {
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
             t.nextLap();
         }
         std::cout << "CPU OMP: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
-        std::cout << "CPU OMP: " << (n/1000.0/1000.0) / t.lapAvg() << " millions/s" << std::endl;
+        std::cout << "CPU OMP: " << n / 1000000.0 / t.lapAvg() << " millions/s" << std::endl;
     }
 
     {
