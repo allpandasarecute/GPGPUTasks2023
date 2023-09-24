@@ -74,6 +74,7 @@ int main(int argc, char **argv)
     images::Image<float> cpu_results(width, height, 1);
     images::Image<float> gpu_results(width, height, 1);
     images::Image<unsigned char> image(width, height, 3);
+    images::Image<float> gpu_results_anti_alias(width, height, 1);
 
     float sizeY = sizeX * height / width;
 
@@ -89,7 +90,7 @@ int main(int argc, char **argv)
         }
         size_t flopsInLoop = 10;
         size_t maxApproximateFlops = width * height * iterationsLimit * flopsInLoop;
-        size_t gflops = 1000*1000*1000;
+        size_t gflops = 1 << 30;
         std::cout << "CPU: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
         std::cout << "CPU: " << maxApproximateFlops / gflops / t.lapAvg() << " GFlops" << std::endl;
 
@@ -124,6 +125,40 @@ int main(int argc, char **argv)
         kernel.compile(printLog);
         // TODO близко к ЦПУ-версии, включая рассчет таймингов, гигафлопс, Real iterations fraction и сохранение в файл
         // результат должен оказаться в gpu_results
+
+        gpu::gpu_mem_32f mandelbrot;
+        mandelbrot.resizeN(width * height);
+
+        unsigned int workGroupSize = 128;
+        unsigned int global_work_size = (width * height + workGroupSize - 1) / workGroupSize * workGroupSize;
+
+        timer t;
+        for (int i = 0; i < benchmarkingIters; ++i) {
+            kernel.exec(gpu::WorkSize(workGroupSize, global_work_size),
+                        mandelbrot, width, height,
+                        centralX - sizeX / 2.0f, centralY - sizeY / 2.0f,
+                        sizeX, sizeY,
+                        iterationsLimit, 0, 1);
+            t.nextLap();
+        }
+        size_t flopsInLoop = 10;
+        size_t maxApproximateFlops = width * height * iterationsLimit * flopsInLoop;
+        size_t gflops = 1 << 30;
+        std::cout << "GPU: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
+        std::cout << "GPU: " << maxApproximateFlops / gflops / t.lapAvg() << " GFlops" << std::endl;
+
+        mandelbrot.readN(gpu_results.ptr(), width * height);
+        renderToColor(gpu_results.ptr(), image.ptr(), width, height);
+        image.savePNG("mandelbrot_gpu.png");
+
+        kernel.exec(gpu::WorkSize(workGroupSize, global_work_size),
+                    mandelbrot, width, height,
+                    centralX - sizeX / 2.0f, centralY - sizeY / 2.0f,
+                    sizeX, sizeY,
+                    iterationsLimit, 0, 10);
+        mandelbrot.readN(gpu_results_anti_alias.ptr(), width * height);
+        renderToColor(gpu_results_anti_alias.ptr(), image.ptr(), width, height);
+        image.savePNG("mandelbrot_gpu_antialias.png");
     }
 
     {
