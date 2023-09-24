@@ -59,6 +59,6 @@ int main(int argc, char **argv)
 
     {
         // TODO: implement on OpenCL
-        // gpu::Device device = gpu::chooseGPUDevice(argc, argv);
+         gpu::Device device = gpu::chooseGPUDevice(argc, argv);
     }
 }
