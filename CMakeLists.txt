@@ -6,6 +6,8 @@ project(task4)
 
 set(CMAKE_CXX_STANDARD 11)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+
 # OpenMP позволит распараллеливать циклы на все ядра процессора простыми директивами
 
 find_package(OpenMP)
