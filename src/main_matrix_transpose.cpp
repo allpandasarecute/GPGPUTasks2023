@@ -38,8 +38,7 @@ int main(int argc, char **argv) {
     as_gpu.writeN(as.data(), M * K);
 
     unsigned int work_group_size = 16;
-    ocl::Kernel matrix_transpose_kernel(matrix_transpose, matrix_transpose_length, "matrix_transpose",
-                                        "-D WORKGROUP_SIZE=" + std::to_string(work_group_size));
+    ocl::Kernel matrix_transpose_kernel(matrix_transpose, matrix_transpose_length, "matrix_transpose");
     matrix_transpose_kernel.compile();
 
     {

@@ -1,3 +1,5 @@
+#define TS 16
+
 __kernel void matrix_transpose(__global const float *as, __global float *res, unsigned int width, unsigned int height) {
     const unsigned int i = get_global_id(0);
     const unsigned int j = get_global_id(1);
@@ -5,7 +7,7 @@ __kernel void matrix_transpose(__global const float *as, __global float *res, un
     const unsigned int local_i = get_local_id(0);
     const unsigned int local_j = get_local_id(1);
 
-    __local float buf[WORKGROUP_SIZE][WORKGROUP_SIZE];
+    __local float buf[TS][TS];
 
     if (i >= width || j >= height)
         return;
