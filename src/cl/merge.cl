@@ -18,12 +18,15 @@ int binary_search(const __global float *a, int n, float e, bool eq) {
     return l;
 }
 
-__kernel void merge(const __global float *as, __global float *bs, const int len) {
-    const int i = get_global_id(0);
+__kernel void merge(const __global float *a, __global float *c, unsigned int len) {
+    int i = get_global_id(0);
+    int block = i / (2 * len);
 
-    int left = (i % (2 * len)) < len;
+    int lower_bound;
+    if ((i / len) % 2)
+        lower_bound = i - len + binary_search(a + block * 2 * len, len, a[i], false);
+    else
+        lower_bound = i + binary_search(a + (block * 2 + 1) * len, len, a[i], true);
 
-    int lower_bound = binary_search(as + (i / (2 * len)) * (2 * len) + left * len, len, as[i], left);
-
-    bs[i - len * !left + lower_bound] = as[i];
+    c[lower_bound] = a[i];
 }
