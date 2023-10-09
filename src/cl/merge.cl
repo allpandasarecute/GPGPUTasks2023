@@ -2,20 +2,20 @@ inline bool comp(float a, float b, bool eq) {
     return eq ? a <= b : a < b;
 }
 
-int binary_search(const __global float *a, int n, float e, bool eq) {
+int binary_search(const __global float *a, int n, float val, bool eq) {
     int l = -1, r = n;
     int m;
 
     while (r - l > 1) {
         m = (l + r) / 2;
 
-        if (comp(a[m], e, eq))
+        if (comp(a[m], val, eq))
             l = m;
         else
             r = m;
     }
 
-    return l;
+    return l + 1;
 }
 
 __kernel void merge(const __global float *as, __global float *bs, unsigned int len) {

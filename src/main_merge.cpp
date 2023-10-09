@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
             unsigned int workGroupSize = 128;
             unsigned int global_work_size = (n + workGroupSize - 1) / workGroupSize * workGroupSize;
 
-            for (unsigned int len = 1; len < n; len *= 2) {
+            for (int len = 1; len < n; len *= 2) {
                 merge.exec(gpu::WorkSize(workGroupSize, global_work_size), as_gpu, bs_gpu, len);
                 std::swap(as_gpu, bs_gpu);
             }
